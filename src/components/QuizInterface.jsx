@@ -7,7 +7,7 @@ import { AnswerOptions } from './AnswerOptions';
 import { generateQuestion } from '../utils/quizGenerator';
 import { QUIZ_TYPES } from '../data/soundsData';
 
-function getRandomQuizMode(isMuted) {
+function getRandomQuizMode(isMuted, isFirstQuestion = false) {
   const availableTypes = Object.values(QUIZ_TYPES).filter(type => {
     if (isMuted && type === QUIZ_TYPES.AUDIO) {
       return false;
@@ -15,11 +15,21 @@ function getRandomQuizMode(isMuted) {
     return true;
   });
 
-  // Randomly pick 2 different types
-  const shuffled = [...availableTypes].sort(() => Math.random() - 0.5);
+  // For first question, exclude audio as question type to avoid Safari autoplay restrictions
+  const questionTypes = isFirstQuestion
+    ? availableTypes.filter(type => type !== QUIZ_TYPES.AUDIO)
+    : availableTypes;
+
+  // Randomly pick question type
+  const questionType = questionTypes[Math.floor(Math.random() * questionTypes.length)];
+
+  // Pick answer type (different from question type)
+  const answerTypes = availableTypes.filter(type => type !== questionType);
+  const answerType = answerTypes[Math.floor(Math.random() * answerTypes.length)];
+
   return {
-    questionType: shuffled[0],
-    answerType: shuffled[1]
+    questionType,
+    answerType
   };
 }
 
@@ -30,7 +40,7 @@ export function QuizInterface() {
   useEffect(() => {
     // Generate first question when quiz starts
     if (!currentQuestion) {
-      const mode = getRandomQuizMode(isMuted);
+      const mode = getRandomQuizMode(isMuted, true); // isFirstQuestion = true
       const question = generateQuestion(
         mode.questionType,
         mode.answerType,
